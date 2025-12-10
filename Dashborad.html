@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar Navigation --- */
+        nav {
+            width: var(--sidebar-width);
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        nav h1 {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 20px;
+        }
+
+        nav button {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            padding: 15px;
+            text-align: left;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        nav button:hover, nav button.active {
+            background-color: var(--secondary);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        /* --- Main Content Area --- */
+        main {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .page {
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease;
+        }
+
+        .page.active {
+            display: block; /* Show active page */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Cards & Grid --- */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary);
+            border-left: 4px solid var(--secondary);
+            padding-left: 10px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--secondary);
+            margin: 10px 0;
+        }
+
+        .description {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* --- Specific Elements --- */
+        select {
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: var(--primary);
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover { background-color: #f1f1f1; }
+
+        .winner-badge {
+            background-color: #27ae60;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .loser-badge {
+            background-color: #95a5a6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        /* Chart Containers */
+        .chart-box {
+            position: relative;
+            height: 300px; /* Fixed height for charts */
+            width: 100%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav>
+        <h1>Analytics DB</h1>
+        <button onclick="showPage('eda')" class="active" id="btn-eda">📊 EDA Overview</button>
+        <button onclick="showPage('charts')" id="btn-charts">📈 Interactive Charts</button>
+        <button onclick="showPage('forecast')" id="btn-forecast">🤖 Forecasting Hub</button>
+        <button onclick="showPage('models')" id="btn-models">🧪 Model Lab</button>
+    </nav>
+
+    <main>
+        
+        <section id="eda" class="page active">
+            <h2>Exploratory Data Analysis (EDA)</h2>
+            <p>Executive summary of key insights derived from the historical transport dataset.</p>
+            
+            <div class="grid-container">
+                <div class="card">
+                    <h3>Top Service</h3>
+                    <div class="stat-value">Rapid Route</div>
+                    <p class="description">The Rapid Route service carries the highest volume of passengers (24.1M), acting as the backbone of the transport network.</p>
+                </div>
+                <div class="card">
+                    <h3>Busiest Day</h3>
+                    <div class="stat-value">Wednesday</div>
+                    <p class="description">Mid-week travel sees the highest average ridership (41.8k), typical of commuter-heavy networks.</p>
+                </div>
+                <div class="card">
+                    <h3>School Impact</h3>
+                    <div class="stat-value">7.3%</div>
+                    <p class="description">School transport accounts for a significant minority share. Holidays will cause noticeable dips in total traffic.</p>
+                </div>
+                <div class="card">
+                    <h3>Total Volume</h3>
+                    <div class="stat-value">61.8M</div>
+                    <p class="description">Total passenger journeys recorded across all service types in the dataset period.</p>
+                </div>
+            </div>
+
+            <div class="grid-container">
+                <div class="card">
+                    <h3>Ridership Share</h3>
+                    <div class="chart-box">
+                        <canvas id="eda-summary-chart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>School vs Public Share</h3>
+                    <div class="chart-box">
+                        <canvas id="chart-school"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="charts" class="page">
+            <h2>Detailed Interactive Charts</h2>
+            <p>Hover over any chart element to see precise data values.</p>
+
+            <div class="grid-container">
+                <div class="card">
+                    <h3>Total Ridership by Service Type</h3>
+                    <p class="description">Comparing total volume (in Millions) across different transport modes.</p>
+                    <div class="chart-box">
+                        <canvas id="chart-services"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Weekly Seasonality Profile</h3>
+                    <p class="description">Average daily ridership broken down by day of the week.</p>
+                    <div class="chart-box">
+                        <canvas id="chart-weekly"></canvas>
+                    </div>
+                </div>
+
+                <div class="card" style="grid-column: span 2;">
+                    <h3>Long-term Yearly Trend</h3>
+                    <p class="description">Total annual ridership (Millions) from 2019 to 2024, showing growth and recovery.</p>
+                    <div class="chart-box">
+                        <canvas id="chart-trend"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="forecast" class="page">
+            <h2>Forecast Hub</h2>
+            <p>Select a predictive model to view the 7-day ridership forecast.</p>
+
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="modelSelect"><strong>Select Model: </strong></label>
+                    <select id="modelSelect" onchange="updateForecastChart()">
+                        <option value="prophet">Facebook Prophet</option>
+                        <option value="sarima">SARIMA (Statistical)</option>
+                        <option value="lightgbm">LightGBM (ML)</option>
+                    </select>
+                </div>
+
+                <div class="chart-box" style="height: 400px;">
+                    <canvas id="forecast-chart"></canvas>
+                </div>
+                
+                <div id="forecast-desc" class="description" style="margin-top:15px; padding: 10px; background-color: #f0f4f8; border-radius: 5px;">
+                    </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <h3>Forecast Data Table (Next 7 Days)</h3>
+                <table id="forecast-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Local Route</th>
+                            <th>Light Rail</th>
+                            <th>Rapid Route</th>
+                            <th>School</th>
+                            <th>Peak Service</th>
+                            <th>Total Forecast</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="models" class="page">
+            <h2>Model Training & Comparison Lab</h2>
+            <p>Technical performance metrics and backtesting results based on the last 7 days of known data.</p>
+
+            <div class="grid-container">
+                <div class="card">
+                    <h3>Methodology</h3>
+                    <p class="description">
+                        <strong>Backtesting:</strong> Models were trained on historical data up to 7 days ago. They then predicted those 7 days "blind".<br>
+                        <strong>Evaluation:</strong> Predictions were compared to actuals using Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE).
+                    </p>
+                </div>
+                <div class="card">
+                    <h3>Overall Champion</h3>
+                    <div class="stat-value" style="color: #27ae60;">SARIMA / LightGBM</div>
+                    <p class="description">SARIMA and LightGBM performed best on specific routes. Prophet struggled with the sharp zero-values in recent data.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Detailed Model Comparison Metrics</h3>
+                <p class="description">Lower MAE/RMSE is better. "Winner" indicates the model with the lowest MAE for that specific service.</p>
+                <div style="overflow-x: auto;">
+                    <table id="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Service Type</th>
+                                <th>Model</th>
+                                <th>MAE (Error)</th>
+                                <th>RMSE</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. DATA INJECTION (From CSVs) ---
+        
+        const insightServices = { labels: ["Other", "Peak Service", "School", "Light Rail", "Local Route", "Rapid Route"], data: [0.082364, 0.344437, 4.512469, 13.800866, 18.971696, 24.161455] };
+        const insightWeekly = { labels: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], data: [36139.36496350365, 41572.3503649635, 41836.244525547445, 41104.80291970803, 39379.200729927004, 14931.861313868612, 10851.091240875912] };
+        const insightSchool = { labels: ["School", "Public"], data: [4512469.0, 57360818.0] };
+        const insightTrend = { labels: [2019, 2020, 2021, 2022, 2023, 2024], data: [8.182788, 9.635769, 9.307409, 10.832835, 13.546169, 10.368317] };
+        const forecastDates = ["2024-09-30", "2024-10-01", "2024-10-02", "2024-10-03", "2024-10-04", "2024-10-05", "2024-10-06"];
+        
+        const forecasts = {
+            "prophet": {"local": [10475, 12607, 12806, 12628, 11979, 1001, 0], "light": [7818, 9059, 9117, 9023, 9047, 4933, 3310], "rapid": [13858, 16265, 16357, 16145, 15312, 5669, 3983], "school": [1345, 1809, 1872, 1764, 1563, 0, 0], "peak": [237, 288, 287, 256, 195, 0, 0]}, 
+            "sarima": {"local": [5926, 5844, 5436, 5080, 2092, 0, 0], "light": [2747, 2922, 2879, 2520, 1245, 0, 0], "rapid": [4950, 5336, 4924, 4573, 390, 0, 0], "school": [2329, 2340, 2209, 2201, 1050, 0, 0], "peak": [177, 179, 174, 135, 50, 0, 0]}, 
+            "lightgbm": {"local": [3049, 2780, 2302, 2126, 577, 63, 79], "light": [1469, 1009, 1103, 258, 216, 193, 454], "rapid": [159, 0, 1785, 1848, 14, 0, 0], "school": [0, 0, 0, 0, 551, 22, 2], "peak": [231, 190, 148, 111, 86, 0, 0]}
+        };
+        
+        const comparisonData = [
+            {"Service": "Local Route", "Model": "Prophet", "RMSE": 11838.2, "MAE": 10236.5, "Is_Winner": false}, 
+            {"Service": "Local Route", "Model": "SARIMA", "RMSE": 10683.8, "MAE": 9182.2, "Is_Winner": false}, 
+            {"Service": "Local Route", "Model": "LightGBM", "RMSE": 10673.7, "MAE": 9171.2, "Is_Winner": true}, 
+            
+            {"Service": "Light Rail", "Model": "Prophet", "RMSE": 8627.5, "MAE": 8271.7, "Is_Winner": false}, 
+            {"Service": "Light Rail", "Model": "SARIMA", "RMSE": 5934.6, "MAE": 5307.3, "Is_Winner": true}, 
+            {"Service": "Light Rail", "Model": "LightGBM", "RMSE": 7958.5, "MAE": 7155.9, "Is_Winner": false}, 
+            
+            {"Service": "Peak Service", "Model": "Prophet", "RMSE": 252.4, "MAE": 218.9, "Is_Winner": false}, 
+            {"Service": "Peak Service", "Model": "SARIMA", "RMSE": 250.5, "MAE": 213.5, "Is_Winner": true}, 
+            {"Service": "Peak Service", "Model": "LightGBM", "RMSE": 267.0, "MAE": 225.5, "Is_Winner": false}, 
+            
+            {"Service": "Rapid Route", "Model": "Prophet", "RMSE": 15205.4, "MAE": 14195.5, "Is_Winner": false}, 
+            {"Service": "Rapid Route", "Model": "SARIMA", "RMSE": 11242.7, "MAE": 9555.3, "Is_Winner": true}, 
+            {"Service": "Rapid Route", "Model": "LightGBM", "RMSE": 14655.6, "MAE": 13127.1, "Is_Winner": false}, 
+            
+            {"Service": "School", "Model": "Prophet", "RMSE": 2194.1, "MAE": 2172.5, "Is_Winner": false}, 
+            {"Service": "School", "Model": "SARIMA", "RMSE": 3620.7, "MAE": 2976.9, "Is_Winner": false}, 
+            {"Service": "School", "Model": "LightGBM", "RMSE": 1558.8, "MAE": 1275.9, "Is_Winner": true}
+        ];
+
+        // --- 2. PAGE NAVIGATION LOGIC ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.querySelectorAll('nav button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            document.getElementById('btn-' + pageId).classList.add('active');
+        }
+
+        // --- 3. CHART RENDERING LOGIC ---
+        Chart.defaults.font.family = "'Segoe UI', sans-serif";
+        Chart.defaults.color = "#666";
+
+        // -- EDA CHARTS --
+        
+        // 1. Service Type Breakdown (Pie)
+        new Chart(document.getElementById('eda-summary-chart'), {
+            type: 'doughnut',
+            data: {
+                labels: insightServices.labels,
+                datasets: [{
+                    data: insightServices.data,
+                    backgroundColor: ['#bdc3c7', '#7f8c8d', '#f1c40f', '#e67e22', '#3498db', '#2c3e50']
+                }]
+            },
+            options: { maintainAspectRatio: false, plugins: { legend: { position: 'right' } } }
+        });
+
+        // 2. School vs Public (Pie) - New
+        new Chart(document.getElementById('chart-school'), {
+            type: 'pie',
+            data: {
+                labels: insightSchool.labels,
+                datasets: [{
+                    data: insightSchool.data,
+                    backgroundColor: ['#f1c40f', '#95a5a6']
+                }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+
+        // -- DETAILED CHARTS PAGE --
+
+        // 3. Service Type Bar Chart
+        new Chart(document.getElementById('chart-services'), {
+            type: 'bar',
+            data: {
+                labels: insightServices.labels,
+                datasets: [{
+                    label: 'Total Journeys (Millions)',
+                    data: insightServices.data,
+                    backgroundColor: '#3498db',
+                    borderRadius: 5
+                }]
+            },
+            options: { indexAxis: 'y', maintainAspectRatio: false }
+        });
+
+        // 4. Weekly Seasonality Line Chart
+        new Chart(document.getElementById('chart-weekly'), {
+            type: 'line',
+            data: {
+                labels: insightWeekly.labels,
+                datasets: [{
+                    label: 'Avg Daily Journeys',
+                    data: insightWeekly.data,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+
+        // 5. Yearly Trend Line Chart - New
+        new Chart(document.getElementById('chart-trend'), {
+            type: 'line',
+            data: {
+                labels: insightTrend.labels,
+                datasets: [{
+                    label: 'Total Annual Journeys (Millions)',
+                    data: insightTrend.data,
+                    borderColor: '#27ae60',
+                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                    fill: true,
+                    tension: 0.1,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: { maintainAspectRatio: false }
+        });
+
+
+        // --- 4. FORECAST LOGIC ---
+        let forecastChartInstance = null;
+
+        function updateForecastChart() {
+            const model = document.getElementById('modelSelect').value;
+            const data = forecasts[model];
+            const ctx = document.getElementById('forecast-chart');
+
+            // Update Description
+            const descriptions = {
+                'prophet': '<strong>Prophet:</strong> Predicts higher volumes. Good at capturing weekly cycles but tends to over-predict when data drops sharply.',
+                'sarima': '<strong>SARIMA:</strong> A statistical approach. It provides a conservative forecast, smoothing out recent volatility.',
+                'lightgbm': '<strong>LightGBM:</strong> A machine learning approach. It reacts fastest to recent trends, predicting lower volumes closer to the most recent data points.'
+            };
+            document.getElementById('forecast-desc').innerHTML = descriptions[model];
+
+            // Update Table
+            const tbody = document.querySelector('#forecast-table tbody');
+            tbody.innerHTML = ''; 
+            forecastDates.forEach((date, i) => {
+                const total = data.local[i] + data.light[i] + data.rapid[i] + data.school[i] + data.peak[i];
+                const row = `<tr>
+                    <td>${date}</td>
+                    <td>${data.local[i]}</td>
+                    <td>${data.light[i]}</td>
+                    <td>${data.rapid[i]}</td>
+                    <td>${data.school[i]}</td>
+                    <td>${data.peak[i]}</td>
+                    <td><strong>${total}</strong></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            // Destroy old chart
+            if (forecastChartInstance) { forecastChartInstance.destroy(); }
+
+            // Create new chart
+            forecastChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: forecastDates,
+                    datasets: [
+                        { label: 'Local Route', data: data.local, backgroundColor: '#3498db', stack: 'Stack 0' },
+                        { label: 'Light Rail', data: data.light, backgroundColor: '#e67e22', stack: 'Stack 0' },
+                        { label: 'Rapid Route', data: data.rapid, backgroundColor: '#2c3e50', stack: 'Stack 0' },
+                        { label: 'School', data: data.school, backgroundColor: '#f1c40f', stack: 'Stack 0' },
+                        { label: 'Peak Service', data: data.peak, backgroundColor: '#9b59b6', stack: 'Stack 0' }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+                    plugins: { tooltip: { mode: 'index', intersect: false } }
+                }
+            });
+        }
+
+        // --- 5. MODEL COMPARISON TABLE ---
+        function loadComparisonTable() {
+            const tbody = document.querySelector('#comparison-table tbody');
+            comparisonData.forEach(row => {
+                const badge = row.Is_Winner ? 
+                    '<span class="winner-badge">WINNER</span>' : 
+                    '<span class="loser-badge">Rank 2/3</span>';
+                
+                const tr = `<tr>
+                    <td>${row.Service}</td>
+                    <td>${row.Model}</td>
+                    <td>${row.MAE.toFixed(1)}</td>
+                    <td>${row.RMSE.toFixed(1)}</td>
+                    <td>${badge}</td>
+                </tr>`;
+                tbody.innerHTML += tr;
+            });
+        }
+
+        // Initialize
+        updateForecastChart();
+        loadComparisonTable();
+
+    </script>
+</body>
+</html>
