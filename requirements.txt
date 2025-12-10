@@ -1,0 +1,9 @@
+pandas
+numpy
+matplotlib
+prophet
+statsmodels
+scikit-learn
+lightgbm
+python-docx
+jupyter
