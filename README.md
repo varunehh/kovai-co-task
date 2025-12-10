@@ -1,5 +1,7 @@
 Public Transport Forecasting: Technical Report
+
 1 Project Overview
+
 This project implements time series forecasting for public
 transport ridership using three models: Prophet, SARIMA,
 and LightGBM. Analyzing 61.87M passenger journeys
